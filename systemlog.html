@@ -1,0 +1,23 @@
+<md-dialog aria-label="Taskoptions">
+	<md-toolbar>
+	  <div class="md-toolbar-tools">
+		<h2>Systemlog för jobb</h2>
+		<span flex></span>
+		<md-button class="md-icon-button" ng-click="cancel()">
+		  <i class="material-icons">close</i>
+		</md-button>
+	  </div>
+	</md-toolbar>
+	
+	<md-content>
+		<div class="md-dialog-content" layout="column" layout-wrap layout-margin layout-align="center" >
+			<div layout-gt-sm="column">
+				<div layout-padding ng-repeat="log in systemlog | orderBy : '-timestamp'" layout="row">
+					<div flex="15">{{log.timestamp}}</div>
+					<div flex>{{log.message}}</div>
+					<div flex="5">{{log.logtype_id}}</div>
+				</div>
+			</div>
+		</div>
+	</md-content>
+</md-dialog>

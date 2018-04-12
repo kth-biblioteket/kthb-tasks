@@ -1,0 +1,183 @@
+<md-dialog aria-label="Taskoptions">
+	<form ng-cloak name="taskoptionsList" id="taskoptionsForm" ng-submit="alert('iii')" hidden>
+		<md-toolbar>
+		  <div class="md-toolbar-tools">
+			<h2>Inställningar för jobb</h2>
+			<span flex></span>
+			<md-button class="md-icon-button" ng-click="cancel()">
+			  <i class="material-icons">close</i>
+			</md-button>
+		  </div>
+		</md-toolbar>
+		<md-toolbar>
+			<div class="md-toolbar-tools">
+				<md-button class="md-raised" ng-disabled="taskoptionsList.$invalid" ng-click="saveTask(task)" >Spara</md-button>
+				<md-button class="md-raised" ng-disabled="taskoptionsList.$invalid" ng-click="showConfirm($event,task)" >Ta bort</md-button>
+				<md-switch ng-true-value="'1'" ng-false-value="'0'" ng-model="task.enabled" aria-label="Enabled ">
+					Aktivt:  {{task.enabled == "1" ? "Ja" : "Nej"}}
+				</md-switch>
+			</div>
+		</md-toolbar>
+		
+		<md-content ng-disabled="task.enabled == '0'">
+			<div class="md-dialog-content" layout="column" layout-wrap layout-margin layout-align="center" >
+				<div layout-gt-sm="row">
+					<md-input-container class="md-block" flex-gt-sm>
+						<label>Jobbnamn</label>
+						<input ng-disabled="task.enabled == '0'" ng-model="task.name" required>
+					</md-input-container>
+				</div>
+				<div layout-gt-sm="row">
+					<md-input-container class="md-block" flex-gt-sm>
+						<label>Beskrivning</label>
+						<!--input ng-disabled="task.enabled == '0'" ng-model="task.description"-->
+						<textarea ng-disabled="task.enabled == '0'" wrap='on' rows="5" cols="75" ng-model="task.description">
+						</textarea>
+					</md-input-container>
+				</div>
+				<div layout-gt-sm="row">
+					<md-input-container class="md-block" flex-gt-sm>
+							<label>Jobtyp</label>
+							<md-select ng-disabled="task.enabled == '0'" ng-model="task.jobtype_id">
+								<md-option>
+									<em>None</em>
+								</md-option>
+								<md-option ng-repeat="jobtype in jobtypes" ng-value="jobtype.id">
+								  {{jobtype.name}}
+								</md-option>
+							</md-select>
+					</md-input-container>
+				</div>
+				<div layout-gt-sm="row">
+					<md-input-container class="md-block" flex-gt-sm>
+						<label>URL</label>
+						<input ng-disabled="task.enabled == '0'" ng-model="task.url">
+					</md-input-container>
+				</div>
+				<div layout-gt-sm="row">
+					<md-input-container class="md-block" flex-gt-sm>
+						<label>APIKEY</label>
+						<input ng-disabled="task.enabled == '0'" ng-model="task.apikey">
+					</md-input-container>
+				</div>
+				<div layout-gt-sm="row">
+					<md-input-container class="md-block" flex="75">
+							<label>Payload</label>
+							<textarea ng-disabled="task.enabled == '0'" wrap='on' rows="5" cols="75" ng-model="task.payload">
+							</textarea>
+					</md-input-container>
+					<md-input-container class="md-block" flex="25">
+							<label>Format</label>
+							<md-select ng-disabled="task.enabled == '0'" ng-model="task.format_id">
+								<md-option>
+									<em>None</em>
+								</md-option>
+								<md-option ng-repeat="format in formats" ng-value="format.id">
+								  {{format.name}}
+								</md-option>
+							</md-select>
+					</md-input-container>
+				</div>
+				<div layout-gt-sm="row">
+					<md-input-container class="md-block" flex-gt-sm>
+						<md-checkbox ng-disabled="task.enabled == '0'" ng-true-value="'1'" ng-false-value="'0'" ng-model="task.zip" aria-label="Checkbox 1">
+							Zip file
+						</md-checkbox>
+					</md-input-container>
+					<md-input-container class="md-block" flex-gt-sm>
+						<label>Zip filename</label>
+						<input ng-disabled="task.enabled == '0'" ng-model="task.zip_destination">
+					</md-input-container>
+				</div>
+				<div layout-gt-sm="row">
+					<md-input-container class="md-block" flex-gt-sm>
+						<md-checkbox ng-disabled="task.enabled == '0'" ng-true-value="'1'" ng-false-value="'0'" ng-model="task.copy" aria-label="Checkbox 1">
+							Copy file
+						</md-checkbox>
+					</md-input-container>
+					<md-input-container class="md-block" flex-gt-sm>
+						<label>folder</label>
+						<input ng-disabled="task.enabled == '0'" ng-model="task.folder">
+					</md-input-container>
+					<md-input-container class="md-block" flex-gt-sm>
+						<label>Destination filename</label>
+						<input ng-disabled="task.enabled == '0'" ng-model="task.copy_destination">
+					</md-input-container>
+				</div>
+				<div layout-gt-sm="row">
+					<md-input-container class="md-block" flex-gt-sm>
+						<md-checkbox ng-disabled="task.enabled == '0'" ng-true-value="'1'" ng-false-value="'0'" ng-model="task.publishfiletowebserver" aria-label="Checkbox 1">
+							Publish to webserver
+						</md-checkbox>
+					</md-input-container>
+					<md-input-container class="md-block" flex-gt-sm>
+						<label>Webfolder</label>
+						<input ng-disabled="task.enabled == '0'" ng-model="task.webfolder">
+					</md-input-container>
+					<md-input-container class="md-block" flex-gt-sm>
+						<label>Webfilename</label>
+						<input ng-disabled="task.enabled == '0'" ng-model="task.webfilename">
+					</md-input-container>
+				</div>
+				<div layout-gt-sm="row">
+					<md-input-container class="md-block" flex-gt-sm>
+						<md-checkbox ng-disabled="task.enabled == '0'" ng-true-value="'1'" ng-false-value="'0'" ng-model="task.ftp" aria-label="Checkbox 1">
+							FTP file
+						</md-checkbox>
+					</md-input-container>
+					<md-input-container class="md-block" flex-gt-sm>
+						<label>FTP-Server</label>
+						<input ng-disabled="task.enabled == '0'" ng-model="task.ftp_server">
+					</md-input-container>
+					<md-input-container class="md-block" flex-gt-sm>
+						<label>FTP-User</label>
+						<input ng-disabled="task.enabled == '0'" ng-model="task.ftp_user">
+					</md-input-container>
+					<md-input-container class="md-block" flex-gt-sm>
+						<label>FTP-Password</label>
+						<input ng-disabled="task.enabled == '0'" ng-model="task.ftp_password">
+					</md-input-container>
+				</div>
+				<div layout-gt-sm="row">
+					<md-input-container class="md-block" flex-gt-sm>
+						<label>Starttid</label>
+						<input ng-disabled="task.enabled == '0'" ng-model="task.start_time">
+					</md-input-container>
+					<md-input-container class="md-block" flex-gt-sm>
+							<label>Intervaller</label>
+							<md-select ng-disabled="task.enabled == '0'" ng-model="task.interval_id">
+								<md-option>
+									<em>None</em>
+								</md-option>
+								<md-option ng-repeat="interval in intervals" ng-value="interval.id">
+								  {{interval.name}}
+								</md-option>
+							</md-select>
+					</md-input-container>
+					<md-input-container class="md-block" flex-gt-sm>
+							<label>Veckodag</label>
+							<md-select ng-disabled="task.enabled == '0'" ng-model="task.weekday_id">
+								<md-option>
+									<em>None</em>
+								</md-option>
+								<md-option ng-repeat="weekday in weekdays" ng-value="weekday.id">
+								  {{weekday.name}}
+								</md-option>
+							</md-select>
+					</md-input-container>
+				</div>
+				<div layout-gt-sm="row">
+					<md-input-container class="md-block" flex-gt-sm>
+						<md-checkbox ng-disabled="task.enabled == '0'" ng-true-value="'1'" ng-false-value="'0'" ng-model="task.notification" aria-label="Checkbox 1">
+							Meddelanden
+						</md-checkbox>
+					</md-input-container>
+					<md-input-container class="md-block" flex-gt-sm>
+						<label>Emailadresser</label>
+						<input ng-disabled="task.enabled == '0'" ng-model="task.notificationemails">
+					</md-input-container>
+				</div>
+			</div>
+		</md-content>
+	</form>
+</md-dialog>

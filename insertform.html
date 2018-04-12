@@ -1,0 +1,51 @@
+
+<!-- Form used to add new entries of taskoptions in database -->
+<md-dialog aria-label="Taskoptions">
+	<form ng-cloak name="taskoptionsList" id="taskoptionsForm" ng-submit="xxx(task_id);" hidden>
+		<md-toolbar>
+		  <div class="md-toolbar-tools">
+			<h2>Taskoptions</h2>
+			<span flex><div layout="row" layout-wrap layout-margin layout-align="center"><h3 >{{task_name}}</h3></div></span>
+			<md-button class="md-icon-button" ng-click="cancel()">
+			  <i class="material-icons">close</i>
+			</md-button>
+		  </div>
+		</md-toolbar>
+		<md-dialog-content>
+		  
+		  <div class="md-dialog-content" layout="row" layout-wrap layout-margin layout-align="center" >
+		  
+			<div ng-repeat="x in dialogtaskoptions | orderBy : 'format'">
+				<!--div style="width:300px;float:left" ng-repeat="x in dialogtaskoptions"-->
+					<md-input-container class="md-block" flex-gt-sm>
+						<div ng-if="x.format != 'bit' && x.format != 'longtext'">
+							<label>{{x.taskoptions_name}}</label>
+							<!--input ng-model="taskoptions.value" autofocus required /-->
+							<input ng-model-options="{ updateOn: 'default blur' }" ng-model="x.optionsvalue" ng-change='updateTaskoption(x.optionsvalue, x.taskoptiontype_id, task_id )' ng-blur='updateTaskoption(x.optionsvalue, x.taskoptiontype_id, task_id )' id="{{x.taskoptiontype_id}}" value="{{x.optionsvalue}}" >
+						</div>
+					</md-input-container>
+					<md-input-container>
+						<div ng-if="x.format == 'longtext'">
+							<label>{{x.taskoptions_name}}</label>
+							<!--input ng-model="taskoptions.value" autofocus required /-->
+							<textarea wrap='off' rows="5" cols="100" ng-model-options="{ updateOn: 'default blur' }" ng-model="x.optionsvalue" ng-change='updateTaskoption(x.optionsvalue, x.taskoptiontype_id, task_id )' ng-blur='updateTaskoption(x.optionsvalue, x.taskoptiontype_id, task_id )' id="{{x.taskoptiontype_id}}">
+								
+							</textarea>
+						</div>
+					</md-input-container>
+					<md-input-container class="md-block" flex-gt-sm>
+						<div ng-if="x.format == 'bit'">
+							<md-checkbox ng-true-value="'true'" ng-false-value="'false'" ng-model-options="{ updateOn: 'default blur' }" ng-model="x.optionsvalue" ng-change='updateTaskoption(x.optionsvalue, x.taskoptiontype_id, task_id )' aria-label="Checkbox 1">
+								{{x.taskoptions_name}}
+							</md-checkbox>
+						</div>
+					</md-input-container>
+			</div>
+			
+			<div>
+				<md-button class="md-primary md-raised" ng-disabled="taskoptionsList.$invalid">Add Into Database</md-button>
+			</div>
+		  </div>
+		</md-dialog-content>	
+	</form>
+</md-dialog>
