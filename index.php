@@ -436,7 +436,7 @@ if(!isset($_SESSION['kth_id'])) {
 							
 						};
 						
-						$scope.headers = ["Namn", "Jobbtyp", "Status", "Nästa händelse","Nästa starttid","Intervall","Aktivt","Kört länge","Inställningar","Återställ","Kör nu"];
+						$scope.headers = ["Namn", "Jobbtyp", "Status", "Senast kört", "Nästa händelse","Nästa starttid","Intervall","Aktivt","Kört länge","Inställningar","Återställ","Kör nu"];
 						
 						
 						function gettasks() {
@@ -925,6 +925,7 @@ if(!isset($_SESSION['kth_id'])) {
 							<td data-th="Namn">{{ x.name }}</td>
 							<td data-th="Jobbtyp">{{ x.jobtype_description }}</td>
 							<td ng-class="{redstyle: x.status_description=='Fel inträffade'}" data-th="Status">{{ x.status_description }}<span ng-if="x.status_description=='Fel inträffade'" ng-click="showSystemLog($event,x.id,x.name)">Log</span></td>
+							<td data-th="Senast kört">{{ x.finished_time }}</td>
 							<td ng-class="{greenstyle: x.action_description!='Väntar på att bli startat'}" data-th="Nästa händelse">{{ x.action_description }}</td>
 							<td data-th="Nästa starttid">{{ x.start_time }}</td>
 							<td data-th="Intervall">{{ x.interval_description }}</td>

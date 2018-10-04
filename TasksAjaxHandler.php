@@ -347,7 +347,7 @@ Funktion som hämtar tasks och returnerar dem i json-format
 function get_tasks_angular($mysqli) {
 	
 	$sql = "SELECT tasks.id, tasks.name as name, tasks.description as task_description,tasks.enabled as enabled, status.status as status_status, 
-			status.description as status_description, actions.name as action_name, actions.description as action_description,tasks.start_time, 
+			status.description as status_description, actions.name as action_name, actions.description as action_description,tasks.finished_time,tasks.start_time, 
 			jobtypes.description as jobtype_description, intervals.description as interval_description, tasks.islongrunning
 			FROM tasks
 			LEFT  JOIN actions on actions.id = tasks.action_id
@@ -366,6 +366,7 @@ function get_tasks_angular($mysqli) {
 		$json .= "\"enabled\": \"". $row['enabled'] . "\",";
 		$json .= "\"status_status\": \"". $row['status_status'] . "\",";
 		$json .= "\"status_description\": \"". $row['status_description'] . "\",";
+		$json .= "\"finished_time\": \"". $row['finished_time'] . "\",";
 		$json .= "\"action_name\": \"". $row['action_name'] . "\",";
 		$json .= "\"action_description\": \"". $row['action_description'] . "\",";
 		$json .= "\"jobtype_description\": \"". $row['jobtype_description'] . "\",";

@@ -20,6 +20,8 @@
 require('config.php'); //innehåller API-KEY + error reporting
 //inkluderar hjälpklass för mailfunktioner
 require_once($_SERVER['DOCUMENT_ROOT'] . '/PHPMailer/PHPMailerAutoload.php');
+//inkludera funktioner
+require_once('functions.php');
 
 /*******************************************************************************
  * 
@@ -31,7 +33,7 @@ require_once($_SERVER['DOCUMENT_ROOT'] . '/PHPMailer/PHPMailerAutoload.php');
  * bookingtype: "I" = Öppen "C"=Closed'
  * 
 *******************************************************************************/
-function mrbs_getBookings($mysqli_MRBS, $fromtime, $totime, $areatype, $status, $bookingtype) {
+function mrbs_getBookings($mysqli, $mysqli_MRBS, $fromtime, $totime, $areatype, $status, $bookingtype) {
 	//TODO IN(bookingtype)
 	$query =   "SELECT start_time, end_time, E.name, repeat_id,
 				E.id AS entry_id, E.type,
@@ -40,6 +42,7 @@ function mrbs_getBookings($mysqli_MRBS, $fromtime, $totime, $areatype, $status, 
 				E.lang,
 				room_number,
 				room_name,
+				room_name_english,
 				area_map,
 				area_map_image
 				FROM mrbs_entry E
@@ -53,8 +56,8 @@ function mrbs_getBookings($mysqli_MRBS, $fromtime, $totime, $areatype, $status, 
 				AND mrbs_area.area_type = $areatype
 				AND (isnull(E.reminded) OR E.reminded = 0)";
 				//AND mrbs_area.id IN ($arealist)";
-	//sendemail("tholind@kth.se", "noreply@lib.kth.se", "KTH Bibilioteket", "test", $query, "", ""); 
-	$result = mysqli_query($mysqli_MRBS, $query);	
+	//InsertLogMessages($mysqli, 0 , 1 , str_replace("'","\'",$query));	
+	$result = mysqli_query($mysqli_MRBS, $query);
 	return $result;
 }
 
@@ -100,9 +103,8 @@ function mrbs_updateConfirmationCode($mysqli, $mysqli_MRBS, $task_id, $id, $conf
  * nästa heltimme och skicka påminnelse till
  * de bokningar som har startid = nästa heltimme
  * 
- * Språkhantering?
  * 
- * TODO Parametrar för: 
+ * TODO Bort med hårdkodning och in med Parametrar för: 
  * - 	areor, 
  * - 	bokningstyper, 
  * - 	hur långt innan starttiden för bokningen 
@@ -146,14 +148,14 @@ function mrbs_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 			//TODO option i payload?
 			$nextHour = date('H')+1;
 			$nexthourinseconds = strtotime(date("Y-m-d") . " ". $nextHour . ":00:00");
-			$result = mrbs_getBookings($mysqli_MRBS, $nexthourinseconds, $nexthourinseconds, "1", "4", "I");
+			$result = mrbs_getBookings($mysqli, $mysqli_MRBS, $nexthourinseconds, $nexthourinseconds, "1", "4", "I");
 			break;	
 		case "readingstudio": 
 			//hämta de bokningar som har startid = nästa heltimme
 			//TODO option i payload?
 			$nextHour = date('H')+1;
 			$nexthourinseconds = strtotime(date("Y-m-d") . " ". $nextHour . ":00:00");
-			$result = mrbs_getBookings($mysqli_MRBS, $nexthourinseconds, $nexthourinseconds, "2", "4", "I"); 	
+			$result = mrbs_getBookings($mysqli, $mysqli_MRBS, $nexthourinseconds, $nexthourinseconds, "2", "4", "I"); 	
 			break;
 		case "supervision": 
 			//hämta de bokningar som har startid = under morgondagen
@@ -162,7 +164,7 @@ function mrbs_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 			$tomorrow = new DateTime('tomorrow');
 			$fromtime = strtotime($tomorrow->format('Y-m-d H:i:s')); //morgondagen 00:00
 			$totime = strtotime($tomorrow->format('Y-m-d H:i:s')) + 60*60*24 - 1; //morgondagen 23:59
-			$result = mrbs_getBookings($mysqli_MRBS, $fromtime, $totime, "3", "0", "I"); 
+			$result = mrbs_getBookings($mysqli, $mysqli_MRBS, $fromtime, $totime, "3", "0", "I"); 
 			break;
 		default:
 	}
@@ -179,15 +181,15 @@ function mrbs_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 		setlocale(LC_ALL, NULL);
 		if ($row['lang']=='sv') {
 			//Svenska
-			$emailfromname ="KTH Biblioteket";
 			switch ($areatype){
 				case "grouproom":
+					$emailfromname ="KTH Biblioteket";
 					$fromadress = '';
 					$toadress = '';
 					$subject = 'Kvittera ditt grupprum!';
 					$html_body = '<div>Hej!</div>
 								</br>
-								<div>Du har bokat rum ' . $row["room_number"] . ', ' . ' från kl ' . date("H:i",$row['start_time']) . ' till kl ' . date("H:i",$row['end_time']) . ', ' . utf8_encode(strftime("%A %d %B",$row['start_time'])) . ' </div>
+								<div>Du har bokat rum ' . $row["room_number"] . ', ' . ' från ' . date("H:i",$row['start_time']) . ' till ' . date("H:i",$row['end_time']) . ', ' . utf8_encode(strftime("%A %d %B",$row['start_time'])) . '. </div>
 								</br>
 								<div>Kvitteringstiden för din bokning har börjat och pågår från ' . date("H:i",$row['start_time'] - 60*15) . ' till ' . date("H:i",$row['start_time'] + 60*15) . '. </div>
 								</br>
@@ -196,7 +198,7 @@ function mrbs_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 										<tbody>
 											<tr>
 												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
-													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=sv">' . 'Kvittera rummet' . '</a>
+													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=sv">' . 'Kvittera din bokning' . '</a>
 												</td>
 											</tr>
 										</tbody>
@@ -218,10 +220,10 @@ function mrbs_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 								<div><a href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=sv">' . 'Gå till din bokning' . '</a></div>
 								</br>';
 								if($row['area_map']) {
-				$html_body .= 		'<div><img src="cid:map" alt="map"></div>
+									$html_body .= '<div><img src="cid:map" alt="map"></div>
 									</br>';
 								}
-				$html_body .=	'<div>Vänliga hälsningar</div>
+					$html_body .= '<div>Vänliga hälsningar</div>
 								</br>
 								<div>KTH Biblioteket</div>
 								<div>08 - 790 70 88</div>
@@ -231,12 +233,13 @@ function mrbs_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 					$inlineimagecid = 'map';
 					break;
 				case "readingstudio":
+					$emailfromname ="KTH Biblioteket";
 					$fromadress = '';
 					$toadress = '';
 					$subject = 'Kvittera din lässtudio!';
 					$html_body = '<div>Hej!</div>
 								</br>
-								<div>Du har bokat ' . $row["room_name"] . ' från kl ' . date("H:i",$row['start_time']) . ' till kl ' . date("H:i",$row['end_time']) . ', ' . utf8_encode(strftime("%A %d %B",$row['start_time'])) . ' </div>
+								<div>Du har bokat ' . $row["room_name"] . ' från ' . date("H:i",$row['start_time']) . ' till ' . date("H:i",$row['end_time']) . ', ' . utf8_encode(strftime("%A %d %B",$row['start_time'])) . '. </div>
 								</br>
 								<div>Kvitteringstiden för din bokning har börjat och pågår från ' . date("H:i",$row['start_time'] - 60*15) . ' till ' . date("H:i",$row['start_time'] + 60*15) . '. </div>
 								</br>
@@ -245,7 +248,7 @@ function mrbs_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 										<tbody>
 											<tr>
 												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
-													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; text-decoration: none; display: inline-block;" href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=sv">' . 'Kvittera rummet' . '</a>
+													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px;font-weight: bold;text-decoration: none; display: inline-block;" href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=sv">' . 'Kvittera din bokning' . '</a>
 												</td>
 											</tr>
 										</tbody>
@@ -267,10 +270,10 @@ function mrbs_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 								<div><a href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=sv">' . 'Gå till din bokning' . '</a></div>
 								</br>';
 								if($row['area_map']) {
-				$html_body .= 		'<div><img src="cid:map" alt="map"></div>
+									$html_body .= 		'<div><img src="cid:map" alt="map"></div>
 									</br>';
 								}
-				$html_body .=	'<div>Vänliga hälsningar</div>
+					$html_body .=	'<div>Vänliga hälsningar</div>
 								</br>
 								<div>KTH Biblioteket</div>
 								<div>08 - 790 70 88</div>
@@ -280,12 +283,13 @@ function mrbs_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 					$inlineimagecid = 'map';
 					break;
 				case "supervision":
+					$emailfromname ="KTH CAS";
 					$fromadress = '';
 					$toadress = '';
 					$subject = 'Påminnelse om handledning'; 
 					$html_body = '<div>Hej!</div>
 								</br>
-								<div>Du har bokat handledning från kl ' . date("H:i",$row['start_time']) . ' till kl ' . date("H:i",$row['end_time']) . ', ' . utf8_encode(strftime("%A %d %B", $row['start_time'])) . ' </div>
+								<div>Du har bokat handledning från ' . date("H:i",$row['start_time']) . ' till ' . date("H:i",$row['end_time']) . ', ' . utf8_encode(strftime("%A %d %B", $row['start_time'])) . '. </div>
 								</br>
 								<div>Denna länk leder till din bokning, där du kan ändra eller avboka den vid behov.</div>
 								</br>
@@ -300,13 +304,13 @@ function mrbs_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 										</tbody>
 									</table>
 								</div>
-								<!--div><a href="' . $url_MRBS . '/edit_entry.php?id=' . $row["id"] . '&lang=sv">' . 'Gå till din bokning' . '</a></div-->
+								<!--div><a href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=sv">' . 'Gå till din bokning' . '</a></div-->
 								</br>';
 								if($row['area_map']) {
-				$html_body .= 		'<div><img src="cid:map" alt="map"></div>
+									$html_body .= 		'<div><img src="cid:map" alt="map"></div>
 									</br>';
 								}
-				$html_body .=	'<div>Välkommen!</div>
+					$html_body .=	'<div>Välkommen!</div>
 								</br>
 								<div>Vänliga hälsningar</div>
 								</br>
@@ -317,15 +321,15 @@ function mrbs_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 			}
 		} else {
 			//Engelska
-			$emailfromname ="KTH Library";
 			switch ($areatype){
 				case "grouproom":
+					$emailfromname ="KTH Library";
 					$fromadress = '';
 					$toadress = '';
 					$subject = 'Confirm your group study room!';
 					$html_body = '<div>Hi!</div>
 								</br>
-								<div>You have booked room ' . $row["room_number"] . ' from ' . date("H:i",$row['start_time']) . ' to ' . date("H:i",$row['end_time']) . ', ' . date("l d F",$row['start_time']) . ' </div>
+								<div>You have booked room ' . $row["room_number"] . ' from ' . date("H:i",$row['start_time']) . ' to ' . date("H:i",$row['end_time']) . ', ' . date("l d F",$row['start_time']) . '. </div>
 								</br>
 								<div>The confirmation time for your booking has started and goes on from ' . date("H:i",$row['start_time'] - 60*15) . ' to ' . date("H:i",$row['start_time'] + 60*15) .'. </div>
 								</br>
@@ -356,10 +360,10 @@ function mrbs_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 								<div><a href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=en">' . 'Go to your booking' . '</a></div>
 								</br>';
 								if($row['area_map']) {
-				$html_body .= 		'<div><img src="cid:map" alt="map"></div>
+									$html_body .= 		'<div><img src="cid:map" alt="map"></div>
 									</br>';
 								}
-				$html_body .=	'<div>Kind regards</div>
+					$html_body .=	'<div>Kind regards</div>
 								</br>
 								<div>KTH Library</div>
 								<div>08 - 790 70 88</div>
@@ -369,12 +373,13 @@ function mrbs_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 					$inlineimagecid = 'map';
 					break;
 				case "readingstudio": 
+					$emailfromname ="KTH Library";
 					$fromadress = '';
 					$toadress = '';
 					$subject = 'Confirm your reading studio!';
 					$html_body = '<div>Hi!</div>
 								</br>
-								<div>You have booked ' . $row["room_name"] . ' from ' . date("H:i",$row['start_time']) . ' to ' . date("H:i",$row['end_time']) . ', ' . date("l d F",$row['start_time']) . ' </div>
+								<div>You have booked ' . $row["room_name"] . ' from ' . date("H:i",$row['start_time']) . ' to ' . date("H:i",$row['end_time']) . ', ' . date("l d F",$row['start_time']) . '. </div>
 								</br>
 								<div>The confirmation time for your booking has started and goes on from ' . date("H:i",$row['start_time'] - 60*15) . ' to ' . date("H:i",$row['start_time'] + 60*15) . '. </div>
 								</br>
@@ -383,7 +388,7 @@ function mrbs_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 										<tbody>
 											<tr>
 												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
-													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=en">' . 'Confirm your room' . '</a>
+													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=en">' . 'Confirm your booking' . '</a>
 												</td>
 											</tr>
 										</tbody>
@@ -405,10 +410,10 @@ function mrbs_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 								<div><a href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=en">' . 'Go to your booking' . '</a></div>
 								</br>';
 								if($row['area_map']) {
-				$html_body .= 		'<div><img src="cid:map" alt="map"></div>
+									$html_body .= 		'<div><img src="cid:map" alt="map"></div>
 									</br>';
 								}
-				$html_body .=	'<div>Kind regards</div>
+					$html_body .=	'<div>Kind regards</div>
 								</br>
 								<div>KTH Library</div>
 								<div>08 - 790 70 88</div>
@@ -417,13 +422,14 @@ function mrbs_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 					$inlineimage = './images/grupprum.jpg';
 					$inlineimagecid = 'map';
 					break;
-				case "supervision": 
+				case "supervision":
+					$emailfromname ="KTH CAW"; 
 					$fromadress = '';
 					$toadress = '';
 					$subject = 'Reminder of supervision booking';
 					$html_body = '<div>Hi!</div>
 								</br>
-								<div>You have booked supervision from ' . date("H:i",$row['start_time']) . ' to ' . date("H:i",$row['end_time']) . ', ' . date("l d F",$row['start_time']) . ' </div>
+								<div>You have booked supervision from ' . date("H:i",$row['start_time']) . ' to ' . date("H:i",$row['end_time']) . ', ' . date("l d F",$row['start_time']) . '. </div>
 								</br>
 								<div>This link leads to your booking where you can change or cancel it if needed.</div>
 								</br>
@@ -456,28 +462,24 @@ function mrbs_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 		}
 		
 		//Skicka mailet till bokaren
-		//$mailresponse = sendemail($row["entry_create_by"], "noreply@kth.se", "KTH Biblioteket", $subject, $html_body);
-		$mailresponse = sendemail("tholind@kth.se", "noreply@kth.se", $emailfromname, $subject, $html_body, $inlineimage, $inlineimagecid);
+		$mailresponse = sendemail($row["entry_create_by"], "noreply@kth.se", "KTH Biblioteket", $subject, $html_body);
+		//$mailresponse = sendemail("tholind@kth.se", "noreply@kth.se", $emailfromname, $subject, $html_body, $inlineimage, $inlineimagecid);
 		if ($mailresponse == 1) {
+			//logga utskicket tillfälligt under införandet
+			error_log("TASKS, Påminnelsemail skickat till: " . $row["entry_create_by"]); 
 			//Sätt reminded till 1 på bokningen;
 			mrbs_updateReminded($mysqli, $mysqli_MRBS, $task_id, $row["entry_id"], 1);
 		} else {
+			$mailresponse = sendemail("tholind@kth.se", "noreply@kth.se", $emailfromname, "Error sending mail to user. "  . $subject, $html_body, $inlineimage, $inlineimagecid);
 			//Logga error
 			InsertLogMessages($mysqli, $task_id, 1 ,$mailresponse);
 		}
-		if ($i==0) {
-			$users .= $row["entry_create_by"];
-			$i = 1;
-		} else {
-			$users .= ", " . $row["entry_create_by"] ;
-		}
+
 	}
 	//sätt nästa action för task 
 	update_task($mysqli, $task_id);
 	//Spara info i systemlog
-	if($users != ""){
-		//InsertLogMessages($mysqli, $task_id, 1 ,"Påminnelsemail skickat till: " . $users);
-	}
+	//InsertLogMessages($mysqli, $task_id, 1 ,"Påminnelsemail skickat");
 }
 
 /******************************************
@@ -540,6 +542,40 @@ function ug_getusers($mysqli,$task_id) {
 	//InsertLogMessages($mysqli, $task_id, 1 ,"Påminnelsemail skickat till: " . $users);
 }
 
+/******************************************
+ * 
+ * Funktion för att rensa en FTP-mapp
+ * 
+******************************************/
+function tasks_purgeftpfolder($mysqli,$task_id) {
+	try {
+		//sätt status till waiting
+		UpdateTaskStatus($mysqli, $task_id, "2");
+		$taskparameters = GetTaskParameters($mysqli,$task_id);
+		while($row = mysqli_fetch_array($taskparameters)) {
+			$notification = $row["notification"];
+			$notificationemails = $row["notificationemails"];
+			$payload = $row["payload"];
+		}
+		$payloadobject = json_decode($payload,TRUE);
+		$folder = $payloadobject['folder'];
+		//kör rensing
+		$systemftpfolder = GetSystemSetting($mysqli, "systemftpfolder");
+
+		//copy($systemftpfolder . "/" . $folder . "/" . $filename)
+		//loopa igenom alla mappar och rensa filer äldre än...
+		deleteDir($systemftpfolder . "/" . $folder, 60);
+		//sätt nästa action för task 
+		update_task($mysqli, $task_id);
+	}
+	catch(Exception $e) {
+		//logga felet till databas
+		InsertLogMessages($mysqli, $task_id, 2 , $e->getMessage());
+		//sätt status till error
+        UpdateTaskStatus($mysqli, $task_id, "4");
+	}
+}
+
 
 /*******************************************************
  * 
@@ -578,6 +614,9 @@ function kthbscript($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 				break;
 			case "ug_getusers":
 				ug_getusers($mysqli,$task_id);
+				break;
+			case "tasks_purgeftpfolder":
+				tasks_purgeftpfolder($mysqli,$task_id);
 				break;
 		}
 }
@@ -1228,7 +1267,7 @@ function GetTaskParameters($mysqli,$task_id) {
 			 INNER JOIN formats ON tasks.format_id = formats.id 
 			 INNER JOIN jobtypes ON tasks.jobtype_id = jobtypes.id
 			 WHERE tasks.id = $task_id";
-	$result = mysqli_query($mysqli,$query);
+	$result = mysqli_query($mysqli,$query);	
 	return $result;
 }
 
@@ -1279,12 +1318,40 @@ function UpdateTaskStatus($mysqli, $task_id, $status_id) {
  * Lägger på det intervall som jobbet har som
  * inställning(interval) till senaste starttid.
  * 
+ * Om nästa starttid är mindre än nuvarande tid 
+ * sätt starttidens datum till nuvarande datum 
+ * och starttidens timme till nuvarande timme + 1.
+ * 
 ***********************************************/
 function UpdateTaskStartTime($mysqli, $task_id) {
-	$query = "UPDATE tasks, intervals 
+	
+	$query =   "SELECT start_time, seconds 
+				FROM tasks, intervals
+				WHERE tasks.id = $task_id
+				AND tasks.interval_id = intervals.id";
+	$result = mysqli_query($mysqli,$query);
+
+	while($row = mysqli_fetch_array($result)) {
+		$currentstarttime = $row["start_time"];
+		$currentinterval = $row["seconds"];
+	}
+
+	$currentstarttimeinsec=strtotime($currentstarttime);
+	
+	if (date('Y-m-d H:i:s',$currentstarttimeinsec+$currentinterval) < date('Y-m-d H:i:s')) {
+		$nextHour = date('H')+1;
+		$adjustedstarttime = date('Y-m-d') . ' ' . $nextHour . ':' . date('i:s',$currentstarttimeinsec);
+		$query = "UPDATE tasks, intervals 
+			  SET tasks.start_time = '$adjustedstarttime'
+			  WHERE tasks.id = $task_id
+			  AND tasks.interval_id = intervals.id";
+	} else {
+		$query = "UPDATE tasks, intervals 
 			  SET tasks.start_time = DATE_ADD(tasks.start_time,INTERVAL intervals.seconds SECOND) 
 			  WHERE tasks.id = $task_id
 			  AND tasks.interval_id = intervals.id";
+	}
+	
 	$result = mysqli_query($mysqli,$query);
 	return $result;
 }
@@ -1353,7 +1420,7 @@ function UpdateTaskislongrunning($mysqli, $task_id, $islongrunning) {
  * Funktion som sparar meddelanden i systemloggen
  * 
 ***********************************************/
-function InsertLogMessages($mysqli, $task_id,$logtype_id,$message) {
+function InsertLogMessages($mysqli, $task_id, $logtype_id, $message) {
 	$query = "INSERT INTO systemlog(task_id,logtype_id,message)
 			  VALUES($task_id,$logtype_id,'$message')";
 	$result = mysqli_query($mysqli,$query);
@@ -1396,7 +1463,6 @@ function sendemail($to, $from, $fromname, $subject, $bodytext, $inlineimage = ''
 		throw new Exception('No emails found!');
 	}
 
-	$mail->AddAddress( $to );
 	if($inlineimage != '' && $inlingeimagecid != '') {
 		$mail->addEmbeddedImage($inlineimage, $inlingeimagecid);	
 	}
@@ -1484,11 +1550,11 @@ while($row = mysqli_fetch_array($result)) {
 		//if (strtotime('now') > strtotime('+7 minutes', strtotime($row["started_time"])) && $row["islongrunning"] != "1") {
 			// skicka notifications
 			$taskparameters = GetTaskParameters($mysqli, $task_id);
-			while($taskparameters = mysqli_fetch_array($taskparameters)) {
-				$task_name = $taskparameters["task_name"];
-				$notification = $taskparameters["notification"];
-				$notificationemails = $taskparameters["notificationemails"];
-				$jobtype = $taskparameters["jobtype"];
+			while($taskparameterrow = mysqli_fetch_array($taskparameters)) {
+				$task_name = $taskparameterrow["task_name"];
+				$notification = $taskparameterrow["notification"];
+				$notificationemails = $taskparameterrow["notificationemails"];
+				$jobtype = $taskparameterrow["jobtype"];
 			}
 			if ($notification == "1") {
 				$subject = "KTHB-Jobb. Nåt kanske är fel med jobbet - $task_name";
