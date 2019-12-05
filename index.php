@@ -90,7 +90,7 @@ if(!isset($_SESSION['kth_id'])) {
 				<meta charset="UTF-8">
 				<title>Document</title>
 				<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-				<link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.css">
+				<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.css">
 				<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic">
 				<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 				<style>
@@ -102,7 +102,8 @@ if(!isset($_SESSION['kth_id'])) {
 							width: 100%;
 							margin: 0;
 							padding: 0;
-							background: #f6f6f6;
+							background: #ffffff;
+							font-family: Source Sans Pro,Helvetica Neue,Helvetica,Arial,sans-serif;
 					}
 					dsiv {
 						padding: 10px;
@@ -215,7 +216,7 @@ if(!isset($_SESSION['kth_id'])) {
 						position: absolute;
 						top: 0px;
 						right: 100px;
-						background-color: rgb(63,81,181);
+						background-color: #ffffff;
 						z-index: -1;
 						transition: z-index 0s linear .1s,opacity 0s ease 0s;
 					}
@@ -293,13 +294,13 @@ if(!isset($_SESSION['kth_id'])) {
 				<!-- -->
 				<script src="js/vkbeautify.0.99.00.beta.js"></script>
 				<!-- Angular Material requires Angular.js Libraries -->
-				<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js"></script>
-				<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-animate.min.js"></script>
-				<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-aria.min.js"></script>
-				<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-messages.min.js"></script>
+				<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js"></script>
+				<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-animate.min.js"></script>
+				<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-aria.min.js"></script>
+				<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-messages.min.js"></script>
 
 				<!-- Angular Material Library -->
-				<script src="http://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.js"></script>
+				<script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.js"></script>
 				  
 				
 				<script>
@@ -825,7 +826,7 @@ if(!isset($_SESSION['kth_id'])) {
 							$scope.title1 = 'Logga in';
 							$scope.title2 = 'Logga ut';
 							$scope.isDisabled = true;
-							$scope.googleUrl = 'http://google.com';
+							$scope.googleUrl = 'https://google.com';
 						});
 						
 					app.controller('SwitchDemoCtrl', function($scope) {
@@ -846,142 +847,146 @@ if(!isset($_SESSION['kth_id'])) {
 			</head>
 
 			<body ng-app="BlankApp">
-				<div id="toolbarContainer" ng-controller="toolbarController" ng-cloak>
-					<md-toolbar layout="row" class="md-fab md-primary" style="height:68px;z-index:0;background-color: #1954a6;color: rgba(255,255,255,0.87);">
-						<md-icon style="width: 65px;height: 65px;" md-svg-src="images/KTH_Logotyp_RGB_2013-2.svg"></md-icon>
-						<span flex></span>
-						<md-button aria-label="menu" class="" ng-click="isOpen=true" ng-mouseenter='isOpen=true' ng-mouseleave='isOpen=false' style="1width:200px;font-size: 12px">
-							<?php if ($loggedin) { ?>
-							  <span><?php echo $username?></span>
-							<?php } else { ?>
-							  <md-icon class="material-icons md-light" style="color: rgba(255,255,255,0.87);">menu</md-icon>
-							<?php } ?>  
-						</md-button>
-					</md-toolbar>
-					<md-fab-toolbar md-open="isOpen" md-direction="right" count="count" ng-mouseenter='isOpen=true' ng-mouseleave='isOpen=false'>
-						<md-fab-trigger class="align-with-text">
-							<md-button aria-label="menu" class="md-primary">
-								<md-icon class="material-icons">menu</md-icon>
-							</md-button>
-						</md-fab-trigger>
-
-						<md-toolbar class="md-primary md-default">
-							<md-fab-actions class="md-toolbar-tools">
+				<div layout="row">
+					<!--div flex="10"></div-->
+					<div flex id="toolbarContainer" ng-controller="toolbarController" ng-cloak>
+						<md-toolbar layout="row" class="md-fab md-primary" style="height:68px;z-index:0;color: #000000;background-color:#ffffff">
+							<md-icon style="width: 65px;height: 65px;" md-svg-src="images/KTH_Logotyp_RGB_2013-2.svg"></md-icon>
+							<span style="margin: 0;align-self: flex-end;padding: 5px 5px;font-size:30px" flex>KTH Biblioteket Tasks</span>
+							<md-button aria-label="menu" class="" ng-click="isOpen=true" ng-mouseenter='isOpen=true' ng-mouseleave='isOpen=false' style="1width:200px;font-size: 12px">
 								<?php if ($loggedin) { ?>
-								<md-button class="md-raised md-mini md-primary" onclick="location.href='/tandem/general_login.php?logout=true&sessionname=KTHB_TASKS_SESSID'">
-									{{title2}} <md-icon class="material-icons" aria-label="Insert Link">account_circle</md-icon>
-								</md-button>
+								<span><?php echo $username?></span>
 								<?php } else { ?>
-								<md-button class="md-raised md-mini md-primary" onclick="location.href='/tandem/general_login.php?returl=/tasks/index.php&sessionname=KTHB_TASKS_SESSID'">
-									{{title1}} <md-icon class="material-icons" aria-label="Insert Link">account_circle</md-icon>
-								</md-button>
-								<?php } ?>
-							  <!--md-button aria-label="Insert Link" class="md-fab md-raised md-mini md-primary">
-								 <md-icon class="material-icons" aria-label="Insert Link">insert_link</md-icon>
-							  </md-button>
-							  <md-button aria-label="Edit" class="md-fab md-raised md-mini md-primary">
-								 <md-icon class="material-icons" aria-label="Edit">mode_edit</md-icon>
-							  </md-button-->
-						   </md-fab-actions>
+								<md-icon class="material-icons md-light" style="color: rgba(0,0,0,0.87);">menu</md-icon>
+								<?php } ?>  
+							</md-button>
 						</md-toolbar>
-					</md-fab-toolbar>
+						<md-fab-toolbar md-open="isOpen" md-direction="right" count="count" ng-mouseenter='isOpen=true' ng-mouseleave='isOpen=false'>
+							<md-fab-trigger class="align-with-text">
+								<md-button aria-label="menu" class="md-primary">
+									<md-icon class="material-icons">menu</md-icon>
+								</md-button>
+							</md-fab-trigger>
+
+							<md-toolbar class="md-primary md-default">
+								<md-fab-actions class="md-toolbar-tools">
+									<?php if ($loggedin) { ?>
+									<md-button class="md-raised md-mini md-primary" onclick="location.href='/tandem/general_login.php?logout=true&sessionname=KTHB_TASKS_SESSID'">
+										{{title2}} <md-icon class="material-icons" aria-label="Insert Link">account_circle</md-icon>
+									</md-button>
+									<?php } else { ?>
+									<md-button class="md-raised md-mini md-primary" onclick="location.href='/tandem/general_login.php?returl=/tasks/index.php&sessionname=KTHB_TASKS_SESSID'">
+										{{title1}} <md-icon class="material-icons" aria-label="Insert Link">account_circle</md-icon>
+									</md-button>
+									<?php } ?>
+								<!--md-button aria-label="Insert Link" class="md-fab md-raised md-mini md-primary">
+									<md-icon class="material-icons" aria-label="Insert Link">insert_link</md-icon>
+								</md-button>
+								<md-button aria-label="Edit" class="md-fab md-raised md-mini md-primary">
+									<md-icon class="material-icons" aria-label="Edit">mode_edit</md-icon>
+								</md-button-->
+							</md-fab-actions>
+							</md-toolbar>
+						</md-fab-toolbar>
+					</div>
+					<!--div flex="10"></div-->
 				</div>
 				<div layout="row">
-				<div flex="10"></div>
-				<div flex>
-				<div layout="row" layout-xs="column">
-					<div ng-controller="AppCtrl" ng-cloak>
-						<h1>KTHB Tasks</h1>
-						<!--div>
-							Inloggad som: <?php //echo $source['full_name']?>
-						</div>
-						<div>
-							<md-button class="md-raised md-primary md-hue-1" onclick="location.href='/tandem/general_login.php?logout=true'">{{title2}}</md-button>
-						</div-->
-					</div>
-					<div flex></div>
-					<div ng-controller="customersCtrl">
-							<div class="header" ng-repeat= "header in headers">
-								<a> {{headers[$index]}} </a>
+					<div flex="10"></div>
+					<div flex>
+						<div layout="row" layout-xs="column">
+							<div ng-controller="AppCtrl" ng-cloak>
+								<!--h1>KTHB Tasks</h1-->
+								<!--div>
+									Inloggad som: <?php //echo $source['full_name']?>
+								</div>
+								<div>
+									<md-button class="md-raised md-primary md-hue-1" onclick="location.href='/tandem/general_login.php?logout=true'">{{title2}}</md-button>
+								</div-->
 							</div>
-							<div class="row" ng-repeat="x in names" ng-class="{greenstyle: x.servicestatus=='OK', redstyle: x.servicestatus!='OK'}">
-									<div layout="row" layout-wrap layout-align="center">
-										{{ x.servicestatus }}
+							<div flex></div>
+							<div ng-controller="customersCtrl">
+									<div class="header" ng-repeat= "header in headers">
+										<a> {{headers[$index]}} </a>
+									</div>
+									<div class="row" ng-repeat="x in names" ng-class="{greenstyle: x.servicestatus=='OK', redstyle: x.servicestatus!='OK'}">
+											<div layout="row" layout-wrap layout-align="center">
+												{{ x.servicestatus }}
+											</div>
 									</div>
 							</div>
+						</div>
+						<div ng-controller="tasks">
+							<div layout="row" layout-wrap layout-align="left">
+								<md-button class="md-primary md-raised" ng-click="showAdvanced($event,'','')">
+									<md-icon> add_box </md-icon> Lägg till
+								</md-button>
+							</div>
+							<table class="rwd-table">
+								<th ng-repeat= "header in headers">
+									<a> {{headers[$index]}} </a>
+								</th>
+								<tr ng-repeat="x in names | orderBy:'-enabled'">{{ x.name }}</a></td-->
+									<td data-th="Namn">{{ x.name }}</td>
+									<td data-th="Jobbtyp">{{ x.jobtype_description }}</td>
+									<td ng-class="{redstyle: x.status_description=='Fel inträffade'}" data-th="Status">{{ x.status_description }}<span ng-if="x.status_description=='Fel inträffade'" ng-click="showSystemLog($event,x.id,x.name)">Log</span></td>
+									<td data-th="Senast kört">{{ x.finished_time }}</td>
+									<td ng-class="{greenstyle: x.action_description!='Väntar på att bli startat'}" data-th="Nästa händelse">{{ x.action_description }}</td>
+									<td data-th="Nästa starttid">{{ x.start_time }}</td>
+									<td data-th="Intervall">{{ x.interval_description }}</td>
+									<td data-th="Aktivt">{{x.enabled == "1" ? "Ja" : "Nej"}}</td>
+									<td ng-class="{orangestyle: x.islongrunning=='1'}" data-th="Kört länge">{{x.islongrunning == "1" ? "Ja" : "Nej"}}</td>
+									<?php if ($activecataloger) { ?>
+									<td data-th="Inställningar">
+										<div layout="row" layout-wrap layout-align="center">
+											<md-button class="md-primary md-raised" ng-click="showAdvanced($event,x.id,x.name)">
+												<md-icon> settings </md-icon>
+											</md-button>
+										</div>
+									</td>
+									<td data-th="Återställ">
+										<div layout="row" layout-wrap layout-align="center">
+											<md-button class="md-warn md-raised" ng-click="resetTask(x.id)" ng-disabled="x.action_name=='init'||x.enabled==false">
+												<md-icon> cached </md-icon>
+											</md-button>
+										</div>
+									</td>
+									<td data-th="Kör nu">
+										<div layout="row" layout-wrap layout-align="center">
+											<md-button class="md-accent md-raised" ng-click="runTask(x.id)" ng-disabled="x.status_description!='Avslutat'||x.enabled==false">
+												<md-icon> play_circle_filled </md-icon>
+											</md-button>
+										</div>
+									</td>
+									<?php } else { ?>
+									<td data-th="Inställningar">
+										<div layout="row" layout-wrap layout-align="center">
+											<md-button class="md-primary md-raised" ng-disabled="true">
+												<md-icon> settings </md-icon>
+											</md-button>
+										</div>
+									</td>
+									<td data-th="Återställ">
+										<div layout="row" layout-wrap layout-align="center">
+											<md-button class="md-warn md-raised" ng-disabled="true">
+												<md-icon> cached </md-icon>
+											</md-button>
+										</div>
+									</td>
+									<td data-th="Kör nu">
+										<div layout="row" layout-wrap layout-align="center">
+											<md-button class="md-accent md-raised" ng-disabled="true">
+												<md-icon> play_circle_filled </md-icon>
+											</md-button>
+										</div>
+									</td>
+									<?php } ?>
+								</tr>
+								
+							</table>
+						</div>
 					</div>
-				</div>
-				<div ng-controller="tasks">
-					<div layout="row" layout-wrap layout-align="left">
-						<md-button class="md-primary md-raised" ng-click="showAdvanced($event,'','')">
-							<md-icon> add_box </md-icon> Lägg till
-						</md-button>
-					</div>
-					<table class="rwd-table">
-						<th ng-repeat= "header in headers">
-							<a> {{headers[$index]}} </a>
-						</th>
-						<tr ng-repeat="x in names | orderBy:'-enabled'">{{ x.name }}</a></td-->
-							<td data-th="Namn">{{ x.name }}</td>
-							<td data-th="Jobbtyp">{{ x.jobtype_description }}</td>
-							<td ng-class="{redstyle: x.status_description=='Fel inträffade'}" data-th="Status">{{ x.status_description }}<span ng-if="x.status_description=='Fel inträffade'" ng-click="showSystemLog($event,x.id,x.name)">Log</span></td>
-							<td data-th="Senast kört">{{ x.finished_time }}</td>
-							<td ng-class="{greenstyle: x.action_description!='Väntar på att bli startat'}" data-th="Nästa händelse">{{ x.action_description }}</td>
-							<td data-th="Nästa starttid">{{ x.start_time }}</td>
-							<td data-th="Intervall">{{ x.interval_description }}</td>
-							<td data-th="Aktivt">{{x.enabled == "1" ? "Ja" : "Nej"}}</td>
-							<td ng-class="{orangestyle: x.islongrunning=='1'}" data-th="Kört länge">{{x.islongrunning == "1" ? "Ja" : "Nej"}}</td>
-							<?php if ($activecataloger) { ?>
-							<td data-th="Inställningar">
-								<div layout="row" layout-wrap layout-align="center">
-									<md-button class="md-primary md-raised" ng-click="showAdvanced($event,x.id,x.name)">
-										<md-icon> settings </md-icon>
-									</md-button>
-								</div>
-							 </td>
-							 <td data-th="Återställ">
-								<div layout="row" layout-wrap layout-align="center">
-									<md-button class="md-warn md-raised" ng-click="resetTask(x.id)" ng-disabled="x.action_name=='init'||x.enabled==false">
-										<md-icon> cached </md-icon>
-									</md-button>
-								</div>
-							 </td>
-							 <td data-th="Kör nu">
-								<div layout="row" layout-wrap layout-align="center">
-									<md-button class="md-accent md-raised" ng-click="runTask(x.id)" ng-disabled="x.status_description!='Avslutat'||x.enabled==false">
-										<md-icon> play_circle_filled </md-icon>
-									</md-button>
-								</div>
-							 </td>
-							 <?php } else { ?>
-							 <td data-th="Inställningar">
-								<div layout="row" layout-wrap layout-align="center">
-									<md-button class="md-primary md-raised" ng-disabled="true">
-										<md-icon> settings </md-icon>
-									</md-button>
-								</div>
-							 </td>
-							 <td data-th="Återställ">
-								<div layout="row" layout-wrap layout-align="center">
-									<md-button class="md-warn md-raised" ng-disabled="true">
-										<md-icon> cached </md-icon>
-									</md-button>
-								</div>
-							 </td>
-							 <td data-th="Kör nu">
-								<div layout="row" layout-wrap layout-align="center">
-									<md-button class="md-accent md-raised" ng-disabled="true">
-										<md-icon> play_circle_filled </md-icon>
-									</md-button>
-								</div>
-							 </td>
-							<?php } ?>
-						</tr>
-						
-					</table>
-				</div>
-				</div>
-				<div flex="10"></div>
+					<div flex="10"></div>
 				</div>
 				<!--div ng-controller="dialogCtrl" class="md-padding" id="popupContainer" ng-cloak>
 				  <div class="dialog-demo-content" layout="row" layout-wrap layout-margin layout-align="center">
