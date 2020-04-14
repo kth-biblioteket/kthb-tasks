@@ -509,7 +509,7 @@ function mrbs_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 								<div>KTH The Centre for Academic Writing</div>
 								<div>www.kth.se/caw</div>';
 				case "talkingbooks":
-					$emailfromname ="KTH CAW"; 
+					$emailfromname ="KTH Library"; 
 					$fromadress = '';
 					$toadress = '';
 					$subject = 'Reminder of introduction to talking books';
@@ -561,6 +561,491 @@ function mrbs_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 			//error_log("TASKS, Påminnelsemail skickat till: " . $row["entry_create_by"]); 
 			//Sätt reminded till 1 på bokningen;
 			mrbs_updateReminded($mysqli, $mysqli_MRBS, $task_id, $row["entry_id"], 1);
+		} else {
+			$mailresponse = sendemail("tholind@kth.se", "noreply@kth.se", $emailfromname, "Error sending mail to user. "  . $subject, $html_body, $inlineimage, $inlineimagecid);
+			//Logga error
+			InsertLogMessages($mysqli, $task_id, 1 ,$mailresponse);
+		}
+
+	}
+	//sätt nästa action för task 
+	update_task($mysqli, $task_id);
+	//Spara info i systemlog
+	//InsertLogMessages($mysqli, $task_id, 1 ,"Påminnelsemail skickat");
+}
+
+/*********************************************
+ * 
+ * Funktion för påminnelsemail till MRBS New!
+ * 
+ * Alla bokningar startar på heltimme. Så hämta
+ * nästa heltimme och skicka påminnelse till
+ * de bokningar som har startid = nästa heltimme
+ * 
+ * 
+ * TODO Bort med hårdkodning och in med Parametrar för: 
+ * - 	areor, 
+ * - 	bokningstyper, 
+ * - 	hur långt innan starttiden för bokningen 
+ * 		påminnelsen ska skickas ut.
+ * 			- grupprum = en kvart innan
+ * 			- CAS = ett dygn innan
+ * 
+*********************************************/
+function mrbsnew_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
+	//init
+	global $db_host_MRBS, $db_login_MRBS, $db_password_MRBS;
+	$subject = '';
+	$html_body = '';
+	$fromadress = '';
+	$toadress = '';
+	$inlineimage = '';
+	$inlineimagecid = '';
+	
+	//sätt status till waiting för jobbet
+	UpdateTaskStatus($mysqli, $task_id, "2");
+	//Hämta parametrar
+	$taskparameters = GetTaskParameters($mysqli, $task_id);
+	while($row = mysqli_fetch_array($taskparameters)) {
+		$notification = $row["notification"];
+		$notificationemails = $row["notificationemails"];
+		$payload = $row["payload"];
+	}
+
+	$areatype = "";
+	//läs in payload för jobbet (JSON i TASK-settings)
+	$payloadobject = json_decode($payload, TRUE);
+	if (isset($payloadobject['type'])) {
+		$areatype = $payloadobject['type'];
+	}
+
+	if (isset($payloadobject['database'])) {
+		$db_database_MRBSnew = $payloadobject['database'];
+	}
+	InsertLogMessages($mysqli, $task_id, 1 , $db_database_MRBSnew);
+	$mysqli_MRBSnew = mysqli_connect($db_host_MRBS, $db_login_MRBS, $db_password_MRBS, $db_database_MRBSnew);
+
+	
+	//Hämta bokningar för aktuell areatype och övriga villkor
+	//status 4 = preliminär, 0=kvitterad, "I" = Öppen "C"=Closed
+	//$mailresponse = sendemail("tholind@kth.se", "noreply@lib.kth.se", "areatype", $subject, $areatype);
+	switch ($areatype){
+		case "grouproom":
+			//hämta de bokningar som har startid = nästa heltimme
+			//TODO option i payload?
+			$nextHour = date('H')+1;
+			$nexthourinseconds = strtotime(date("Y-m-d") . " ". $nextHour . ":00:00");
+			$result = mrbs_getBookings($mysqli, $mysqli_MRBSnew, $nexthourinseconds, $nexthourinseconds, "1", "4", "I");
+			break;	
+		case "readingstudio": 
+			//hämta de bokningar som har startid = nästa heltimme
+			//TODO option i payload?
+			$nextHour = date('H')+1;
+			$nexthourinseconds = strtotime(date("Y-m-d") . " ". $nextHour . ":00:00");
+			$result = mrbs_getBookings($mysqli, $mysqli_MRBSnew, $nexthourinseconds, $nexthourinseconds, "2", "4", "I"); 	
+			break;
+		case "supervision": 
+			//hämta de bokningar som har startid = under morgondagen
+			//TODO option i payload?
+			$today = date("Y-m-d H:i:s");
+			$tomorrow = new DateTime('tomorrow');
+			$fromtime = strtotime($tomorrow->format('Y-m-d H:i:s')); //morgondagen 00:00
+			$totime = strtotime($tomorrow->format('Y-m-d H:i:s')) + 60*60*24 - 1; //morgondagen 23:59
+			$result = mrbs_getBookings($mysqli, $mysqli_MRBSnew, $fromtime, $totime, "3", "0", "I"); 
+			break;
+		case "talkingbooks": 
+			//hämta de bokningar som har startid = under morgondagen
+			//TODO option i payload?
+			$today = date("Y-m-d H:i:s");
+			$tomorrow = new DateTime('tomorrow');
+			$fromtime = strtotime($tomorrow->format('Y-m-d H:i:s')); //morgondagen 00:00
+			$totime = strtotime($tomorrow->format('Y-m-d H:i:s')) + 60*60*24 - 1; //morgondagen 23:59
+			$result = mrbs_getBookings($mysqli, $mysqli_MRBSnew, $fromtime, $totime, "5", "0", "I"); 
+			break;
+		default:
+	}
+	
+	$i=0;
+	$users = "";
+	while($row = mysqli_fetch_array($result)) {
+		//Uppdatera bokningen med en confirmation_code(för att kunna kvittera med ett enda klick på länk/knapp)
+		$confirmation_code = strtr(base64_encode(openssl_random_pseudo_bytes(64)),"+/=", "XXX");
+		mrbs_updateConfirmationCode($mysqli, $mysqli_MRBSnew, $task_id, $row["entry_id"], $confirmation_code);
+		$bookingdate = date("Y-m-d H:i:s",$row["start_time"]);
+		//Sätt till NULL == default windows system's(apps-servern) regional/language settings == Svenska
+		//för att få strftime("%A %d %B") att använda rätt språk
+		setlocale(LC_ALL, NULL);
+		if ($row['lang']=='sv') {
+			//Svenska
+			switch ($areatype){
+				case "grouproom":
+					$emailfromname ="KTH Biblioteket";
+					$fromadress = '';
+					$toadress = '';
+					$subject = 'Kvittera ditt grupprum!';
+					$html_body = '<div>Hej!</div>
+								</br>
+								<div>Du har bokat rum ' . $row["room_number"] . ', ' . ' från ' . date("H:i",$row['start_time']) . ' till ' . date("H:i",$row['end_time']) . ', ' . utf8_encode(strftime("%A %d %B",$row['start_time'])) . '. </div>
+								</br>
+								<div>Kvitteringstiden för din bokning har börjat och pågår från ' . date("H:i",$row['start_time'] - 60*15) . ' till ' . date("H:i",$row['start_time'] + 60*15) . '. </div>
+								</br>
+								<div>
+									<table border="0" cellspacing="0" cellpadding="0">
+										<tbody>
+											<tr>
+												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
+													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=sv&database=mrbs&appname=mrbs">' . 'Kvittera din bokning' . '</a>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+								<!--div><a href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=sv&database=mrbs&appname=mrbs">' . 'Kvittera rummet' . '</a></div-->
+								</br>
+								<!--div>
+									<table border="0" cellspacing="0" cellpadding="0">
+										<tbody>
+											<tr>
+												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
+													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=sv">' . 'Gå till din bokning' . '</a>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div-->
+								<div><a href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=sv">' . 'Gå till din bokning' . '</a></div>
+								</br>';
+								if($row['area_map']) {
+									$html_body .= '<div><img src="cid:map" alt="map"></div>
+									</br>';
+								}
+					$html_body .= '<div>Vänliga hälsningar</div>
+								</br>
+								<div>KTH Biblioteket</div>
+								<div>08 - 790 70 88</div>
+								<div>www.kth.se/biblioteket</div>
+								';
+					$inlineimage = './images/grupprum.jpg';
+					$inlineimagecid = 'map';
+					break;
+				case "readingstudio":
+					$emailfromname ="KTH Biblioteket";
+					$fromadress = '';
+					$toadress = '';
+					$subject = 'Kvittera din lässtudio!';
+					$html_body = '<div>Hej!</div>
+								</br>
+								<div>Du har bokat ' . $row["room_name"] . ' från ' . date("H:i",$row['start_time']) . ' till ' . date("H:i",$row['end_time']) . ', ' . utf8_encode(strftime("%A %d %B",$row['start_time'])) . '. </div>
+								</br>
+								<div>Kvitteringstiden för din bokning har börjat och pågår från ' . date("H:i",$row['start_time'] - 60*15) . ' till ' . date("H:i",$row['start_time'] + 60*15) . '. </div>
+								</br>
+								<div>
+									<table border="0" cellspacing="0" cellpadding="0">
+										<tbody>
+											<tr>
+												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
+													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px;font-weight: bold;text-decoration: none; display: inline-block;" href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=sv&database=mrbs&appname=mrbs">' . 'Kvittera din bokning' . '</a>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+								<!--div><a href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=sv&database=mrbs&appname=mrbs">' . 'Kvittera rummet' . '</a></div-->
+								</br>
+								<!--div>
+									<table border="0" cellspacing="0" cellpadding="0">
+										<tbody>
+											<tr>
+												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
+													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=sv">' . 'Gå till din bokning' . '</a>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div-->
+								<div><a href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=sv">' . 'Gå till din bokning' . '</a></div>
+								</br>';
+								if($row['area_map']) {
+									$html_body .= 		'<div><img src="cid:map" alt="map"></div>
+									</br>';
+								}
+					$html_body .=	'<div>Vänliga hälsningar</div>
+								</br>
+								<div>KTH Biblioteket</div>
+								<div>08 - 790 70 88</div>
+								<div>www.kth.se/biblioteket</div>
+								';
+					$inlineimage = './images/grupprum.jpg';
+					$inlineimagecid = 'map';
+					break;
+				case "supervision":
+					$emailfromname ="KTH CAS";
+					$fromadress = '';
+					$toadress = '';
+					$subject = 'Påminnelse om handledning'; 
+					$html_body = '<div>Hej!</div>
+								</br>
+								<div>Du har bokat handledning från ' . date("H:i",$row['start_time']) . ' till ' . date("H:i",$row['end_time']) . ', ' . utf8_encode(strftime("%A %d %B", $row['start_time'])) . '. </div>
+								</br>
+								<div>Denna länk leder till din bokning, där du kan ändra eller avboka den vid behov.</div>
+								</br>
+								<div>
+									<table border="0" cellspacing="0" cellpadding="0">
+										<tbody>
+											<tr>
+												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
+													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=sv">' . 'Gå till din bokning' . '</a>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+								<!--div><a href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=sv">' . 'Gå till din bokning' . '</a></div-->
+								</br>';
+								if($row['area_map']) {
+									$html_body .= 		'<div><img src="cid:map" alt="map"></div>
+									</br>';
+								}
+					$html_body .=	'<div>Välkommen!</div>
+								</br>
+								<div>Vänliga hälsningar</div>
+								</br>
+								<div>KTH Centrum för akademiskt skrivande</div>
+								<div>www.kth.se/cas</div>';
+					break;
+				case "talkingbooks":
+					$emailfromname ="KTH Biblioteket";
+					$fromadress = '';
+					$toadress = '';
+					$subject = 'Påminnelse om talboksintroduktion'; 
+					$html_body = '<div>Hej!</div>
+								</br>
+								<div>' .
+									$row['mailtext'] .
+								'</div>
+								</br>
+								<div>' .
+									'Din bokning är från ' . date("H:i",$row['start_time']) . ' to ' . date("H:i",$row['end_time']) . ', ' . date("l d F",$row['start_time']) .
+								'</div>
+								</br>
+								<div>Denna länk leder till din bokning, där du kan ändra eller avboka den vid behov.</div>
+								</br>
+								<div>
+									<table border="0" cellspacing="0" cellpadding="0">
+										<tbody>
+											<tr>
+												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
+													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=sv">' . 'Gå till din bokning' . '</a>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+								<!--div><a href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=sv">' . 'Gå till din bokning' . '</a></div-->
+								</br>';
+								if($row['area_map']) {
+									$html_body .= 		'<div><img src="cid:map" alt="map"></div>
+									</br>';
+								}
+					$html_body .=	'<div>Välkommen!</div>
+								</br>
+								<div>Vänliga hälsningar</div>
+								</br>
+								<div>KTH Biblioteket</div>
+								<div>www.kth.se/biblioteket</div>';
+					break;
+				default:
+			}
+		} else {
+			//Engelska
+			switch ($areatype){
+				case "grouproom":
+					$emailfromname ="KTH Library";
+					$fromadress = '';
+					$toadress = '';
+					$subject = 'Confirm your group study room!';
+					$html_body = '<div>Hi!</div>
+								</br>
+								<div>You have booked room ' . $row["room_number"] . ' from ' . date("H:i",$row['start_time']) . ' to ' . date("H:i",$row['end_time']) . ', ' . date("l d F",$row['start_time']) . '. </div>
+								</br>
+								<div>The confirmation time for your booking has started and goes on from ' . date("H:i",$row['start_time'] - 60*15) . ' to ' . date("H:i",$row['start_time'] + 60*15) .'. </div>
+								</br>
+								<div>
+									<table border="0" cellspacing="0" cellpadding="0">
+										<tbody>
+											<tr>
+												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
+													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=en&database=mrbs&appname=mrbs">' . 'Confirm your booking' . '</a>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+								<!--div><a href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=en&database=mrbs&appname=mrbs">' . 'Confirm your booking' . '</a></div-->
+								</br>
+								<!--div>
+									<table border="0" cellspacing="0" cellpadding="0">
+										<tbody>
+											<tr>
+												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
+													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=en">' . 'Go to your booking' . '</a>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div-->
+								<div><a href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=en">' . 'Go to your booking' . '</a></div>
+								</br>';
+								if($row['area_map']) {
+									$html_body .= 		'<div><img src="cid:map" alt="map"></div>
+									</br>';
+								}
+					$html_body .=	'<div>Kind regards</div>
+								</br>
+								<div>KTH Library</div>
+								<div>08 - 790 70 88</div>
+								<div>www.kth.se/en/biblioteket</div>
+								';
+					$inlineimage = './images/grupprum.jpg';
+					$inlineimagecid = 'map';
+					break;
+				case "readingstudio": 
+					$emailfromname ="KTH Library";
+					$fromadress = '';
+					$toadress = '';
+					$subject = 'Confirm your reading studio!';
+					$html_body = '<div>Hi!</div>
+								</br>
+								<div>You have booked ' . $row["room_name"] . ' from ' . date("H:i",$row['start_time']) . ' to ' . date("H:i",$row['end_time']) . ', ' . date("l d F",$row['start_time']) . '. </div>
+								</br>
+								<div>The confirmation time for your booking has started and goes on from ' . date("H:i",$row['start_time'] - 60*15) . ' to ' . date("H:i",$row['start_time'] + 60*15) . '. </div>
+								</br>
+								<div>
+									<table border="0" cellspacing="0" cellpadding="0">
+										<tbody>
+											<tr>
+												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
+													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=en&database=mrbs&appname=mrbs">' . 'Confirm your booking' . '</a>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+								<!--div><a href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=en&database=mrbs&appname=mrbs">' . 'Confirm your booking' . '</a></div-->
+								</br>
+								<!--div>
+									<table border="0" cellspacing="0" cellpadding="0">
+										<tbody>
+											<tr>
+												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
+													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=en">' . 'Go to your booking' . '</a>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div-->
+								<div><a href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=en">' . 'Go to your booking' . '</a></div>
+								</br>';
+								if($row['area_map']) {
+									$html_body .= 		'<div><img src="cid:map" alt="map"></div>
+									</br>';
+								}
+					$html_body .=	'<div>Kind regards</div>
+								</br>
+								<div>KTH Library</div>
+								<div>08 - 790 70 88</div>
+								<div>www.kth.se/en/biblioteket</div>
+								';
+					$inlineimage = './images/grupprum.jpg';
+					$inlineimagecid = 'map';
+					break;
+				case "supervision":
+					$emailfromname ="KTH CAW"; 
+					$fromadress = '';
+					$toadress = '';
+					$subject = 'Reminder of supervision booking';
+					$html_body = '<div>Hi!</div>
+								</br>
+								<div>You have booked supervision from ' . date("H:i",$row['start_time']) . ' to ' . date("H:i",$row['end_time']) . ', ' . date("l d F",$row['start_time']) . '. </div>
+								</br>
+								<div>This link leads to your booking where you can change or cancel it if needed.</div>
+								</br>
+								<div>
+									<table border="0" cellspacing="0" cellpadding="0">
+										<tbody>
+											<tr>
+												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
+													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=en">' . 'Go to your booking' . '</a>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+								<!--div><a href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=en">' . 'Go to your booking' . '</a></div-->
+								</br>';
+								if($row['area_map']) {
+				$html_body .= 		'<div><img src="cid:map" alt="map"></div>
+									</br>';
+								}
+				$html_body .=	'<div>Welcome!</div>
+								</br>
+								<div>Kind regards</div>
+								</br>
+								<div>KTH The Centre for Academic Writing</div>
+								<div>www.kth.se/caw</div>';
+				case "talkingbooks":
+					$emailfromname ="KTH Library"; 
+					$fromadress = '';
+					$toadress = '';
+					$subject = 'Reminder of introduction to talking books';
+					$html_body = '<div>Hi!</div>
+								</br>
+								<div>' .
+                                	$row['mailtext_en'] .
+								'</div>
+								</br>
+								<div>' .
+									'Your booking is from ' . date("H:i",$row['start_time']) . ' to ' . date("H:i",$row['end_time']) . ', ' . date("l d F",$row['start_time']) .
+								'</div>
+								</br>
+								<div>This link leads to your booking where you can change or cancel it if needed.</div>
+								</br>
+								<div>
+									<table border="0" cellspacing="0" cellpadding="0">
+										<tbody>
+											<tr>
+												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
+													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=en">' . 'Go to your booking' . '</a>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+								<!--div><a href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=en">' . 'Go to your booking' . '</a></div-->
+								</br>';
+								if($row['area_map']) {
+				$html_body .= 		'<div><img src="cid:map" alt="map"></div>
+									</br>';
+								}
+				$html_body .=	'<div>Welcome!</div>
+								</br>
+								<div>Kind regards</div>
+								</br>
+								<div>KTH Library</div>
+								<div>www.kth.se/en/biblioteket</div>';
+					break;
+				default:
+			}
+		}
+		
+		//Skicka mailet till bokaren
+		$mailresponse = sendemail($row["entry_create_by"], "noreply@kth.se", "KTH Biblioteket", $subject, $html_body);
+		//$mailresponse = sendemail("tholind@kth.se", "noreply@kth.se", $emailfromname, $subject, $html_body, $inlineimage, $inlineimagecid);
+		if ($mailresponse == 1) {
+			//logga utskicket tillfälligt under införandet
+			//error_log("TASKS, Påminnelsemail skickat till: " . $row["entry_create_by"]); 
+			//Sätt reminded till 1 på bokningen;
+			mrbs_updateReminded($mysqli, $mysqli_MRBSnew, $task_id, $row["entry_id"], 1);
 		} else {
 			$mailresponse = sendemail("tholind@kth.se", "noreply@kth.se", $emailfromname, "Error sending mail to user. "  . $subject, $html_body, $inlineimage, $inlineimagecid);
 			//Logga error
@@ -700,6 +1185,9 @@ function kthbscript($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 		{
 			case "mrbs_mailreminder":
 				mrbs_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS);
+				break;
+			case "mrbsnew_mailreminder":
+				mrbsnew_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS);
 				break;
 			case "mrbs_purgebookings":
 				mrbs_purgebookings($mysqli, $mysqli_MRBS, $task_id);
