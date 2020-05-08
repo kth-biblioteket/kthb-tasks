@@ -601,6 +601,8 @@ function mrbsnew_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 	$toadress = '';
 	$inlineimage = '';
 	$inlineimagecid = '';
+	$db_database_MRBSnew = '';
+	$appname = '';
 	
 	//sätt status till waiting för jobbet
 	UpdateTaskStatus($mysqli, $task_id, "2");
@@ -622,6 +624,13 @@ function mrbsnew_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 	if (isset($payloadobject['database'])) {
 		$db_database_MRBSnew = $payloadobject['database'];
 	}
+
+	if (isset($payloadobject['appname'])) {
+		$appname = $payloadobject['appname'];
+	}
+
+	$url_MRBS = 'https://apps.lib.kth.se/' . $appname;
+
 	InsertLogMessages($mysqli, $task_id, 1 , $db_database_MRBSnew);
 	$mysqli_MRBSnew = mysqli_connect($db_host_MRBS, $db_login_MRBS, $db_password_MRBS, $db_database_MRBSnew);
 
@@ -694,25 +703,13 @@ function mrbsnew_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 										<tbody>
 											<tr>
 												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
-													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=sv&database=mrbs&appname=mrbs">' . 'Kvittera din bokning' . '</a>
+													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=sv&database=' . $db_database_MRBSnew . '&appname=' . $appname . '">' . 'Kvittera din bokning' . '</a>
 												</td>
 											</tr>
 										</tbody>
 									</table>
 								</div>
-								<!--div><a href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=sv&database=mrbs&appname=mrbs">' . 'Kvittera rummet' . '</a></div-->
 								</br>
-								<!--div>
-									<table border="0" cellspacing="0" cellpadding="0">
-										<tbody>
-											<tr>
-												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
-													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=sv">' . 'Gå till din bokning' . '</a>
-												</td>
-											</tr>
-										</tbody>
-									</table>
-								</div-->
 								<div><a href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=sv">' . 'Gå till din bokning' . '</a></div>
 								</br>';
 								if($row['area_map']) {
@@ -744,25 +741,13 @@ function mrbsnew_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 										<tbody>
 											<tr>
 												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
-													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px;font-weight: bold;text-decoration: none; display: inline-block;" href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=sv&database=mrbs&appname=mrbs">' . 'Kvittera din bokning' . '</a>
+													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px;font-weight: bold;text-decoration: none; display: inline-block;" href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=sv&database=' . $db_database_MRBSnew . '&appname=' . $appname . '">' . 'Kvittera din bokning' . '</a>
 												</td>
 											</tr>
 										</tbody>
 									</table>
 								</div>
-								<!--div><a href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=sv&database=mrbs&appname=mrbs">' . 'Kvittera rummet' . '</a></div-->
 								</br>
-								<!--div>
-									<table border="0" cellspacing="0" cellpadding="0">
-										<tbody>
-											<tr>
-												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
-													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=sv">' . 'Gå till din bokning' . '</a>
-												</td>
-											</tr>
-										</tbody>
-									</table>
-								</div-->
 								<div><a href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=sv">' . 'Gå till din bokning' . '</a></div>
 								</br>';
 								if($row['area_map']) {
@@ -800,7 +785,6 @@ function mrbsnew_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 										</tbody>
 									</table>
 								</div>
-								<!--div><a href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=sv">' . 'Gå till din bokning' . '</a></div-->
 								</br>';
 								if($row['area_map']) {
 									$html_body .= 		'<div><img src="cid:map" alt="map"></div>
@@ -875,25 +859,13 @@ function mrbsnew_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 										<tbody>
 											<tr>
 												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
-													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=en&database=mrbs&appname=mrbs">' . 'Confirm your booking' . '</a>
+													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=en&database=' . $db_database_MRBSnew . '&appname=' . $appname . '">' . 'Confirm your booking' . '</a>
 												</td>
 											</tr>
 										</tbody>
 									</table>
 								</div>
-								<!--div><a href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=en&database=mrbs&appname=mrbs">' . 'Confirm your booking' . '</a></div-->
 								</br>
-								<!--div>
-									<table border="0" cellspacing="0" cellpadding="0">
-										<tbody>
-											<tr>
-												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
-													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=en">' . 'Go to your booking' . '</a>
-												</td>
-											</tr>
-										</tbody>
-									</table>
-								</div-->
 								<div><a href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=en">' . 'Go to your booking' . '</a></div>
 								</br>';
 								if($row['area_map']) {
@@ -925,25 +897,13 @@ function mrbsnew_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 										<tbody>
 											<tr>
 												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
-													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=en&database=mrbs&appname=mrbs">' . 'Confirm your booking' . '</a>
+													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=en&database=' . $db_database_MRBSnew . '&appname=' . $appname . '">' . 'Confirm your booking' . '</a>
 												</td>
 											</tr>
 										</tbody>
 									</table>
 								</div>
-								<!--div><a href="https://apps.lib.kth.se/webservices/mrbs/api/v1/entries/confirm/' . $confirmation_code . '?lang=en&database=mrbs&appname=mrbs">' . 'Confirm your booking' . '</a></div-->
 								</br>
-								<!--div>
-									<table border="0" cellspacing="0" cellpadding="0">
-										<tbody>
-											<tr>
-												<td align="center" style="border-radius: 30px;" bgcolor="#B0C92B">
-													<a style="padding: 15px 25px; border-radius: 30px; border: 1px solid #B0C92B; border-image: none; color: rgb(255, 255, 255); font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold;text-decoration: none; display: inline-block;" href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=en">' . 'Go to your booking' . '</a>
-												</td>
-											</tr>
-										</tbody>
-									</table>
-								</div-->
 								<div><a href="' . $url_MRBS . '/edit_entry.php?id=' . $row["entry_id"] . '&lang=en">' . 'Go to your booking' . '</a></div>
 								</br>';
 								if($row['area_map']) {
