@@ -58,7 +58,7 @@ function mrbs_getBookings($mysqli, $mysqli_MRBS, $fromtime, $totime, $areatype, 
 				AND mrbs_area.area_type = $areatype
 				AND (isnull(E.reminded) OR E.reminded = 0)";
 				//AND mrbs_area.id IN ($arealist)";
-	//InsertLogMessages($mysqli, 0 , 1 , str_replace("'","\'",$query));	
+	InsertLogMessages($mysqli, 0 , 1 , str_replace("'","\'",$query));	
 	$result = mysqli_query($mysqli_MRBS, $query);
 	return $result;
 }
@@ -1003,7 +1003,7 @@ function mrbsnew_mailreminder($mysqli, $mysqli_MRBS, $task_id, $url_MRBS) {
 		//$mailresponse = sendemail("tholind@kth.se", "noreply@kth.se", $emailfromname, $subject, $html_body, $inlineimage, $inlineimagecid);
 		if ($mailresponse == 1) {
 			//logga utskicket tillfälligt under införandet
-			//error_log("TASKS, Påminnelsemail skickat till: " . $row["entry_create_by"]); 
+			error_log("TASKS, Påminnelsemail skickat till: " . $row["entry_create_by"]); 
 			//Sätt reminded till 1 på bokningen;
 			mrbs_updateReminded($mysqli, $mysqli_MRBSnew, $task_id, $row["entry_id"], 1);
 		} else {
