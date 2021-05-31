@@ -871,11 +871,11 @@ if(!isset($_SESSION['kth_id'])) {
 							<md-toolbar class="md-primary md-default">
 								<md-fab-actions class="md-toolbar-tools">
 									<?php if ($loggedin) { ?>
-									<md-button class="md-raised md-mini md-primary" onclick="location.href='/tandem/general_login.php?logout=true&sessionname=KTHB_TASKS_SESSID'">
+									<md-button class="md-raised md-mini md-primary" onclick="location.href='login.php?logout=true&sessionname=KTHB_TASKS_SESSID'">
 										{{title2}} <md-icon class="material-icons" aria-label="Insert Link">account_circle</md-icon>
 									</md-button>
 									<?php } else { ?>
-									<md-button class="md-raised md-mini md-primary" onclick="location.href='/tandem/general_login.php?returl=/tasks/index.php&sessionname=KTHB_TASKS_SESSID'">
+									<md-button class="md-raised md-mini md-primary" onclick="location.href='login.php?returl=/tasks/index.php&sessionname=KTHB_TASKS_SESSID'">
 										{{title1}} <md-icon class="material-icons" aria-label="Insert Link">account_circle</md-icon>
 									</md-button>
 									<?php } ?>
