@@ -62,38 +62,9 @@ try {
 	if(isset($_SESSION['kth_id']) && $_SESSION['kth_id'] != "") {
 		$userid = $_SESSION['kth_id']  ;
 		$returl = str_replace('ampersand','&',$returl);
-		registerTandemLogin($userid);
 		header("location: https://" . $_SERVER['HTTP_HOST'] . "/tasks");
 	}
   
 } catch (OpenIDConnectClientException $e) {
 	echo $e->getMessage();
-}
-
-
-function registerTandemLogin($userid)
-{
-	$loginyear 	= date("Y") ;
-	$loginmonth = date("m") ;
-	$loginday 	= date("d") ;
-	$loginTime 	= date("H:i:s"); 
-	$lastlogin = $loginyear."-".$loginmonth."-".$loginday." ".$loginTime ; 
-
-	$sql = "INSERT INTO  tll_logincounts (userid, loginyear, loginmonth, loginday, logintime) 
-				VALUES ('$userid' , '$loginyear', '$loginmonth', '$loginday', '$loginTime')" ;
-	$res = mysqli_query($con, $sql) ;
-	
-	$sqlCheck = "select * from tll_users where id = '$userid' " ;
-	$resultCheck = mysqli_query($con, $sqlCheck) ;
-	$rowUser 	= mysqli_fetch_assoc($resultCheck) ;
-	if($rowUser){
-		$lastlogin = $loginyear."-".$loginmonth."-".$loginday." ".$loginTime ;
-		$sql = "UPDATE tll_users SET last_login = '$lastlogin', lastloginyear = '$loginyear' ,  lastloginmonth = '$loginmonth'  WHERE id = '$userid' " ;
-		$res = mysqli_query($con, $sql) ;
-	} else {
-		$sql = "INSERT INTO tll_users (id, lastloginyear, lastloginmonth, reg_date, last_login) 
-				VALUES ('$userid', '$loginyear', '$loginmonth' , '$lastlogin', '$lastlogin')  " ;
-		$res = mysqli_query($con, $sql) ;
-		//error_log("insert res: " . $sql);
-	}
 }
