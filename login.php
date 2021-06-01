@@ -60,7 +60,6 @@ try {
 	//finns ett kthid så startas applikationen
 	if(isset($_SESSION['kth_id']) && $_SESSION['kth_id'] != "") {
 		$userid = $_SESSION['kth_id']  ;
-		$returl = str_replace('ampersand','&',$returl);
 		header("location: https://" . $_SERVER['HTTP_HOST'] . "/tasks");
 	}
   
