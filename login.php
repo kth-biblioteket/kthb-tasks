@@ -1,7 +1,6 @@
 <?php
 
 require_once "config.php";
-include_once('dbconnect.php');
 date_default_timezone_set("Europe/Stockholm");
 
 session_name("KTHB_TASKS_SESSID");
