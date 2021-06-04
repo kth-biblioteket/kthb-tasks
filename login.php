@@ -9,6 +9,7 @@ session_start();
 //kth cas är nu ändrat till openid
 if(isset($_REQUEST['logout']) && $_REQUEST['logout']=='true') {
 	header("location: $kth_auth_endpoint/oauth2/logout");
+	exit();
 }
 
 //210519 OpenID Connect framework(myits)
