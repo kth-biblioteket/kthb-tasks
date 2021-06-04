@@ -6,6 +6,10 @@ date_default_timezone_set("Europe/Stockholm");
 session_name("KTHB_TASKS_SESSID");
 
 session_start();
+//kth cas är nu ändrat till openid
+if(isset($_REQUEST['logout']) && $_REQUEST['logout']=='true') {
+	header("location: $kth_auth_endpoint/oauth2/logout");
+}
 
 //210519 OpenID Connect framework(myits)
 require_once($_SERVER['DOCUMENT_ROOT'] .  '/myits/vendor/autoload.php');
